@@ -52,7 +52,7 @@ LANCZOS_DIMENSION = 30
 # USER PARAMETERS: wavefunction and potential figures
 WAVEFUNCTION_BASIS_SIZE = 201
 WAVEFUNCTION_KY_NM = -0.15
-WAVEFUNCTION_V_DC = 0.0 * HBAR * CYCLOTRON_FREQUENCY
+WAVEFUNCTION_V_DC = 0.5 * HBAR * CYCLOTRON_FREQUENCY
 WAVEFUNCTION_STATE_INDEX = 0  # n=0 is the ground state.
 WAVEFUNCTION_X_POINTS = 501
 # Atomic-unit values retained exactly from the original potential script.
@@ -62,24 +62,31 @@ POTENTIAL_X_POINTS = 500
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 OUTPUT_DIRECTORY = PROJECT_ROOT / "figures" / "statics"
+DATA_DIRECTORY = PROJECT_ROOT / "data" / "statics"
 
 # Output names are derived from every run-specific numerical setting. Thus a
-# changed configuration produces a distinct image rather than replacing one.
-SPECTRUM_OUTPUT = OUTPUT_DIRECTORY / (
-    "spectrum_"
+# changed configuration produces a distinct file rather than replacing one.
+# Each tag names both the cached HDF5 data product and the rendered figure.
+SPECTRUM_TAG = (
     f"{_ky_range_token(*SPECTRUM_KY_RANGE_NM)}_Nky{SPECTRUM_KY_POINTS}_"
     f"Vdc{_number_token(SPECTRUM_V_DC / (HBAR * CYCLOTRON_FREQUENCY))}_Nbasis{SPECTRUM_BASIS_SIZE}_"
-    f"states_n0to{SPECTRUM_STATE_COUNT - 1}_{SPECTRUM_SOLVER}_M{LANCZOS_DIMENSION}.png"
+    f"states_n0to{SPECTRUM_STATE_COUNT - 1}_{SPECTRUM_SOLVER}_M{LANCZOS_DIMENSION}"
 )
-WAVEFUNCTION_OUTPUT = OUTPUT_DIRECTORY / (
-    "probability_"
+WAVEFUNCTION_TAG = (
     f"n{WAVEFUNCTION_STATE_INDEX}_ky{_number_token(WAVEFUNCTION_KY_NM)}_"
     f"Vdc{_number_token(WAVEFUNCTION_V_DC / (HBAR * CYCLOTRON_FREQUENCY))}_Nbasis{WAVEFUNCTION_BASIS_SIZE}_"
-    f"Nx{WAVEFUNCTION_X_POINTS}.png"
+    f"Nx{WAVEFUNCTION_X_POINTS}"
 )
-POTENTIAL_OUTPUT = OUTPUT_DIRECTORY / (
-    "potential_"
+POTENTIAL_TAG = (
     f"Vdc{_number_token(POTENTIAL_V_DC / (HBAR * CYCLOTRON_FREQUENCY))}_"
     f"ky{'_'.join(_number_token(ky * 18.9) for ky in POTENTIAL_KY_AU)}_"
-    f"Nx{POTENTIAL_X_POINTS}.png"
+    f"Nx{POTENTIAL_X_POINTS}"
 )
+
+SPECTRUM_OUTPUT = OUTPUT_DIRECTORY / f"spectrum_{SPECTRUM_TAG}.png"
+WAVEFUNCTION_OUTPUT = OUTPUT_DIRECTORY / f"probability_{WAVEFUNCTION_TAG}.png"
+POTENTIAL_OUTPUT = OUTPUT_DIRECTORY / f"potential_{POTENTIAL_TAG}.png"
+
+SPECTRUM_DATA_FILE = DATA_DIRECTORY / f"spectrum_{SPECTRUM_TAG}.h5"
+WAVEFUNCTION_DATA_FILE = DATA_DIRECTORY / f"probability_{WAVEFUNCTION_TAG}.h5"
+POTENTIAL_DATA_FILE = DATA_DIRECTORY / f"potential_{POTENTIAL_TAG}.h5"

@@ -1,4 +1,32 @@
-"""Stage 2: derive and persist current data from a saved trajectory."""
+"""Stage 3: derive and persist the x-integrated current from a saved
+current-density file.
+
+``current_density.py`` gives the spatially resolved line current density
+``(J_x(x,t), J_y(x,t))``. Neither integral over ``x`` computed here is an
+*absolute* current in the sense of amperes for a specific device:
+
+- ``J_x(x,t)`` is already the true current crossing position ``x`` (see
+  :mod:`dynamics.current_density`): a well-defined, ``L_y``-independent
+  quantity by itself. ``Ix(t)=∫J_x(x,t)dx`` therefore does **not** correspond
+  to a new physical quantity — it sums together current values at different
+  positions, which is not standard. It is kept only as the same diagnostic
+  previously computed ad hoc by ``plot_current_density.py --compare``.
+
+- ``J_y(x,t)`` is a genuine linear density in ``x``. Writing the full
+  wavefunction as ``Ψ(x,y,t)=ψ(x,t)e^{ik_yy}/sqrt(L_y)``, the properly
+  normalized 2D current density is ``J_y(x,t)/L_y``, so the true transverse
+  current crossing a full-width line is ``(1/L_y)∫J_y(x,t)dx`` — **not**
+  ``∫J_y(x,t)dx`` alone (dimensional check: ``J_y`` already has units of
+  charge/time, so integrating it over ``x`` gives charge·length/time, not a
+  current). This module saves ``∫J_y(x,t)dx`` as ``iy_per_ly_au`` — the
+  transverse current **per unit channel length L_y** (equivalently, its
+  value at ``L_y=1`` a.u.), not an absolute current. ``L_y`` is never a
+  parameter of this single-``k_y``-channel model (see the exclusion noted at
+  the top of the repository README), so there is no way to convert this to
+  an absolute current here; that would require summing over the occupied
+  ``k_y`` Fermi sea, where the ``L_y`` dependence cancels against the
+  density of states.
+"""
 
 import argparse
 import json
@@ -10,76 +38,45 @@ import numpy as np
 
 if __package__:
     from . import config
-    from .propagation import configured_run_metadata
-    from .trajectory import load_trajectory
+    from .current_density import configured_current_density_metadata, load_current_density_file
 else:  # Support ``cd dynamics && python current.py``.
     import sys
 
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from dynamics import config
-    from dynamics.propagation import configured_run_metadata
-    from dynamics.trajectory import load_trajectory
-
-from src.basis import sho_basis_and_derivative
+    from dynamics.current_density import configured_current_density_metadata, load_current_density_file
 
 
-def reconstruct_wavefunction(states, x, *, mass, omega, hbar):
-    """Reconstruct ``ψ`` and ``∂xψ`` from ``states`` of shape ``(nt,N)``.
+def integrate_current(x, jx, jy):
+    """Integrate line current densities over ``x``.
 
-    Returned complex arrays have shape ``(nt,len(x))``; all values use au.
+    ``jx`` and ``jy`` have shape ``(nt,nx)``; returns ``(ix,iy_per_ly)`` of
+    shape ``(nt,)``. ``ix`` has no established physical meaning (diagnostic
+    only). ``iy_per_ly`` is the transverse current per unit channel length
+    ``L_y``, not an absolute current — see the module docstring.
     """
-    basis, derivative = sho_basis_and_derivative(x, states.shape[-1], mass, omega, hbar)
-    return states @ basis, states @ derivative
-
-
-def line_current_density(psi, derivative, x, ky, *, hbar, charge, field, mass, length):
-    """Return line currents ``(Jx,Jy)`` in atomic units with ``psi`` shape."""
-    density = np.abs(psi) ** 2
-    jx = -charge * hbar / mass * np.imag(np.conj(psi) * derivative)
-    py = hbar * ky + charge * field * np.asarray(x)**2 / (2 * length)
-    return jx, -charge * py * density / mass
-
-
-def continuity_residual(psi, jx, times, x, charge):
-    """Return ``∂t(-e|ψ|²)+∂xJx`` for ``(nt,nx)`` sampled arrays."""
-    return (np.gradient(-charge * np.abs(psi)**2, times, axis=0, edge_order=2)
-            + np.gradient(jx, x, axis=1, edge_order=2))
+    ix = np.trapezoid(jx, x, axis=1)
+    iy_per_ly = np.trapezoid(jy, x, axis=1)
+    return ix, iy_per_ly
 
 
 CURRENT_FORMAT = "nonuniform_B_2DEG_current"
 CURRENT_FORMAT_VERSION = 1
 
 
-def configured_current_grid():
-    """Return the common reconstruction grid in atomic units."""
-    return np.linspace(-np.sqrt(2) * config.MAGNETIC_LENGTH_SCALE,
-                       np.sqrt(2) * config.MAGNETIC_LENGTH_SCALE,
-                       config.SPATIAL_GRID_POINTS)
+def current_path_for_current_density(current_density_path):
+    """Return the default current filename derived from ``current_density_path``."""
+    current_density_path = Path(current_density_path)
+    tag = current_density_path.stem.removeprefix("current_density_")
+    return current_density_path.with_name(f"current_{tag}.h5")
 
 
-def configured_current_metadata():
-    """Return metadata that identifies a current-data product unambiguously."""
-    x = configured_current_grid()
-    return {
-        "trajectory_metadata": configured_run_metadata(),
-        "spatial_grid_points": config.SPATIAL_GRID_POINTS,
-        "x_min_au": float(x[0]),
-        "x_max_au": float(x[-1]),
-    }
+def resolve_current_density_path(path):
+    """Resolve a bare current-density filename from the standard data directory.
 
-
-def current_path_for_trajectory(trajectory_path, spatial_grid_points):
-    """Return the default current filename derived from ``trajectory_path``."""
-    trajectory_path = Path(trajectory_path)
-    tag = trajectory_path.stem.removeprefix("trajectory_")
-    return trajectory_path.with_name(f"current_{tag}_Nx{spatial_grid_points}.h5")
-
-
-def resolve_trajectory_path(path):
-    """Resolve a bare trajectory filename from the standard data directory.
-
-    This keeps ``cd dynamics && python current.py trajectory_...h5`` useful,
-    while an explicitly relative or absolute path remains exactly as supplied.
+    This keeps ``cd dynamics && python current.py current_density_...h5``
+    useful, while an explicitly relative or absolute path remains exactly as
+    supplied.
     """
     path = Path(path)
     if path.exists() or path.parent != Path("."):
@@ -88,70 +85,55 @@ def resolve_trajectory_path(path):
     return standard_path if standard_path.exists() else path
 
 
-def current_grid(metadata, spatial_grid_points):
-    """Return a reconstruction grid using the physical scale in trajectory metadata."""
-    try:
-        length = metadata["magnetic_length_scale"]
-    except KeyError as error:
-        raise ValueError(f"Trajectory metadata is missing {error.args[0]!r}") from error
-    if spatial_grid_points < 2:
-        raise ValueError("spatial_grid_points must be at least 2")
-    return np.linspace(-np.sqrt(2) * length, np.sqrt(2) * length, spatial_grid_points)
+def current_metadata(current_density_metadata):
+    """Return provenance metadata for a current product from any current-density file."""
+    return {"current_density_metadata": current_density_metadata}
 
 
-def current_metadata(trajectory_metadata, x):
-    """Return provenance metadata for a current product from any trajectory."""
-    return {
-        "trajectory_metadata": trajectory_metadata,
-        "spatial_grid_points": int(x.size),
-        "x_min_au": float(x[0]),
-        "x_max_au": float(x[-1]),
-    }
+def configured_current_metadata():
+    """Return metadata that identifies a current product unambiguously."""
+    return current_metadata(configured_current_density_metadata())
 
 
-def _save_current(path, x, times, jx, jy, metadata):
+def _save_current(path, times, ix, iy_per_ly, metadata):
     """Atomically save the current arrays and their provenance to HDF5."""
     path = Path(path)
-    x = np.asarray(x, dtype=float)
     times = np.asarray(times, dtype=float)
-    jx = np.asarray(jx, dtype=float)
-    jy = np.asarray(jy, dtype=float)
-    expected_shape = (times.size, x.size)
-    if jx.shape != expected_shape or jy.shape != expected_shape:
-        raise ValueError("jx and jy must both have shape (len(times), len(x))")
+    ix = np.asarray(ix, dtype=float)
+    iy_per_ly = np.asarray(iy_per_ly, dtype=float)
+    if ix.shape != times.shape or iy_per_ly.shape != times.shape:
+        raise ValueError("ix and iy_per_ly must both have the same shape as times")
 
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".tmp")
-    chunks = (min(128, times.size), x.size)
     with h5py.File(temporary, "w") as handle:
         handle.attrs["format"] = CURRENT_FORMAT
         handle.attrs["format_version"] = CURRENT_FORMAT_VERSION
         handle.attrs["metadata_json"] = json.dumps(metadata, sort_keys=True)
-        handle.create_dataset("x_au", data=x)
         handle.create_dataset("times_au", data=times)
-        for name, values in (("jx_au", jx), ("jy_au", jy)):
-            handle.create_dataset(name, data=values, chunks=chunks,
-                                  compression="gzip", compression_opts=4, shuffle=True)
+        handle.create_dataset("ix_au", data=ix)
+        # Transverse current per unit channel length L_y, NOT an absolute
+        # current -- see the module docstring. Deliberately not named
+        # "iy_au" to avoid that misreading.
+        handle.create_dataset("iy_per_ly_au", data=iy_per_ly)
     temporary.replace(path)
 
 
 def _load_current(path):
-    """Load ``(x, times, jx, jy, metadata)`` from a current HDF5 file."""
+    """Load ``(times, ix, iy_per_ly, metadata)`` from a current HDF5 file."""
     path = Path(path)
     with h5py.File(path, "r") as handle:
         if handle.attrs.get("format") != CURRENT_FORMAT:
             raise ValueError(f"{path} is not a nonuniform-B 2DEG current file")
         if handle.attrs.get("format_version") != CURRENT_FORMAT_VERSION:
-            raise ValueError(f"Unsupported current-data format in {path}")
+            raise ValueError(f"Unsupported current format in {path}")
         metadata = json.loads(handle.attrs["metadata_json"])
-        x = handle["x_au"][...]
         times = handle["times_au"][...]
-        jx = handle["jx_au"][...]
-        jy = handle["jy_au"][...]
-    expected_shape = (times.size, x.size)
-    if jx.shape != expected_shape or jy.shape != expected_shape:
+        ix = handle["ix_au"][...]
+        iy_per_ly = handle["iy_per_ly_au"][...]
+    if ix.shape != times.shape or iy_per_ly.shape != times.shape:
         raise ValueError(f"Invalid current dataset shapes in {path}")
-    return x, times, jx, jy, metadata
+    return times, ix, iy_per_ly, metadata
 
 
 def load_configured_current():
@@ -162,109 +144,87 @@ def load_configured_current():
             f"No current data at {path}. Run `python current.py` from dynamics/ "
             "or `python -m dynamics.current` from the repository root first."
         )
-    x, times, jx, jy, metadata = _load_current(path)
+    times, ix, iy_per_ly, metadata = _load_current(path)
     if metadata != configured_current_metadata():
         raise ValueError(
             f"Current metadata in {path} does not match dynamics/config.py. "
             "Run `python current.py --force` from dynamics/ or "
             "`python -m dynamics.current --force` from the repository root."
         )
-    return x, times, jx, jy
+    return times, ix, iy_per_ly
 
 
 def load_current_file(path):
     """Load any valid current HDF5 file without requiring the active config."""
-    x, times, jx, jy, metadata = _load_current(path)
-    return x, times, jx, jy, metadata
+    times, ix, iy_per_ly, metadata = _load_current(path)
+    return times, ix, iy_per_ly, metadata
 
 
-def calculate_and_save_current(trajectory_path, output_path=None, *, spatial_grid_points,
-                               force=False):
-    """Derive current from an arbitrary saved trajectory and persist it.
+def calculate_and_save_current(current_density_path, output_path=None, *, force=False):
+    """Derive the current from an arbitrary saved current-density file.
 
-    Physics parameters are read from the trajectory's metadata, rather than
-    from the active ``dynamics/config.py``.  Thus this can process an older or
-    differently configured trajectory without rerunning dynamics.
+    This never reconstructs the wavefunction or reruns propagation; it only
+    reads the already-saved line current density and integrates it over
+    ``x``, so it works directly on data produced by an existing
+    ``current_density.py`` run. See the module docstring for what ``ix`` and
+    ``iy_per_ly`` do (and do not) mean physically.
     """
-    trajectory_path = resolve_trajectory_path(trajectory_path)
-    states, times, trajectory_metadata = load_trajectory(trajectory_path)
-    try:
-        basis_size = int(trajectory_metadata["basis_size"])
-        if states.shape[1] != basis_size:
-            raise ValueError("trajectory basis_size metadata disagrees with coefficient data")
-        x = current_grid(trajectory_metadata, spatial_grid_points)
-        metadata = current_metadata(trajectory_metadata, x)
-        parameters = {
-            name: trajectory_metadata[name]
-            for name in ("effective_mass", "cyclotron_frequency", "hbar", "ky",
-                         "elementary_charge", "magnetic_field", "magnetic_length_scale")
-        }
-    except KeyError as error:
-        raise ValueError(f"Trajectory metadata is missing {error.args[0]!r}") from error
+    current_density_path = resolve_current_density_path(current_density_path)
+    x, times, jx, jy, current_density_metadata = load_current_density_file(current_density_path)
+    metadata = current_metadata(current_density_metadata)
 
-    output_path = (current_path_for_trajectory(trajectory_path, spatial_grid_points)
+    output_path = (current_path_for_current_density(current_density_path)
                    if output_path is None else Path(output_path))
     if output_path.exists() and not force:
-        _, _, _, _, existing_metadata = _load_current(output_path)
+        _, _, _, existing_metadata = _load_current(output_path)
         if existing_metadata != metadata:
             raise ValueError(
-                f"Existing {output_path} was derived from different data or grid. "
+                f"Existing {output_path} was derived from different current-density data. "
                 "Choose --output or use --force to replace it."
             )
-        x, saved_times, jx, jy, _ = _load_current(output_path)
-        return x, saved_times, jx, jy, output_path, False
+        saved_times, ix, iy_per_ly, _ = _load_current(output_path)
+        return saved_times, ix, iy_per_ly, output_path, False
 
-    psi, derivative = reconstruct_wavefunction(
-        states, x, mass=parameters["effective_mass"],
-        omega=parameters["cyclotron_frequency"], hbar=parameters["hbar"],
-    )
-    jx, jy = line_current_density(
-        psi, derivative, x, parameters["ky"], hbar=parameters["hbar"],
-        charge=parameters["elementary_charge"], field=parameters["magnetic_field"],
-        mass=parameters["effective_mass"], length=parameters["magnetic_length_scale"],
-    )
-    _save_current(output_path, x, times, jx, jy, metadata)
-    return x, times, jx, jy, output_path, True
+    ix, iy_per_ly = integrate_current(x, jx, jy)
+    _save_current(output_path, times, ix, iy_per_ly, metadata)
+    return times, ix, iy_per_ly, output_path, True
 
 
 def calculate_and_save_configured_current(force=False):
-    """Derive current arrays from the saved trajectory, then save them once."""
+    """Derive the current from the saved current-density file, then save it once."""
     if not force and config.CURRENT_DATA_FILE.exists():
         return (*load_configured_current(), False)
 
-    x, times, jx, jy, _, calculated = calculate_and_save_current(
-        config.TRAJECTORY_FILE, config.CURRENT_DATA_FILE,
-        spatial_grid_points=config.SPATIAL_GRID_POINTS, force=force,
+    times, ix, iy_per_ly, _, calculated = calculate_and_save_current(
+        config.CURRENT_DENSITY_DATA_FILE, config.CURRENT_DATA_FILE, force=force,
     )
-    return x, times, jx, jy, calculated
+    return times, ix, iy_per_ly, calculated
 
 
-def main(trajectory=None, output=None, spatial_grid_points=None, force=False):
-    """Create current data from the configured or an explicitly chosen trajectory."""
-    if trajectory is None and output is None and spatial_grid_points is None:
-        x, times, jx, jy, calculated = calculate_and_save_configured_current(force=force)
+def main(current_density=None, output=None, force=False):
+    """Create current data from the configured or an explicitly chosen current-density file."""
+    if current_density is None and output is None:
+        times, ix, iy_per_ly, calculated = calculate_and_save_configured_current(force=force)
         destination = config.CURRENT_DATA_FILE
     else:
-        trajectory = config.TRAJECTORY_FILE if trajectory is None else Path(trajectory)
-        spatial_grid_points = (config.SPATIAL_GRID_POINTS if spatial_grid_points is None
-                               else spatial_grid_points)
-        x, times, jx, jy, destination, calculated = calculate_and_save_current(
-            trajectory, output, spatial_grid_points=spatial_grid_points, force=force)
+        current_density = (config.CURRENT_DENSITY_DATA_FILE if current_density is None
+                           else Path(current_density))
+        times, ix, iy_per_ly, destination, calculated = calculate_and_save_current(
+            current_density, output, force=force)
     action = "Saved" if calculated else "Reused"
     print(f"{action} {destination}")
-    print(f"current arrays: {jx.shape}; x points: {x.size}; time points: {times.size}")
+    print(f"current arrays: {ix.shape}; time points: {times.size}")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Calculate current from a saved HDF5 trajectory.")
-    parser.add_argument("trajectory", nargs="?", help="input trajectory HDF5 (default: configured trajectory)")
-    parser.add_argument("--output", "-o", help="output current HDF5 (default: derived from trajectory name)")
-    parser.add_argument("--nx", type=int, dest="spatial_grid_points",
-                        help="number of x-grid points (default: config value)")
+    parser = argparse.ArgumentParser(description="Integrate a saved HDF5 current-density file over x (Ix diagnostic; Iy per unit Ly).")
+    parser.add_argument("current_density", nargs="?",
+                        help="input current-density HDF5 (default: configured current-density data)")
+    parser.add_argument("--output", "-o", help="output current HDF5 (default: derived from current-density name)")
     parser.add_argument("--force", action="store_true", help="recompute and overwrite current data")
     try:
         arguments = parser.parse_args()
-        main(arguments.trajectory, arguments.output, arguments.spatial_grid_points, arguments.force)
+        main(arguments.current_density, arguments.output, arguments.force)
     except (FileNotFoundError, ValueError) as error:
         print(f"Cannot create current data: {error}", file=sys.stderr)
         raise SystemExit(1)

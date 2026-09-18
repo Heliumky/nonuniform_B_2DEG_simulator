@@ -18,16 +18,23 @@ occupied $k_y$ channels.
   exponential-action wrappers (`lanczos.py`), the commutator-free
   $\Upsilon^{[6]}_3$ time-stepper (`propagators.py`), and the shared
   zero-based state-index convention (`state_index.py`).
-- **statics/** — the DC-only spectrum, wavefunction, and potential figures
-  described in Section 2. Entry points: `run_spectrum.py`,
-  `run_wave_function.py`, `run_potential.py`; parameters live in `config.py`.
+- **statics/** — the DC-only spectrum, wavefunction, and potential
+  calculations described in Section 2, following the same
+  calculate-and-save/plot-from-saved-data split as `dynamics/`. Calculation
+  stages: `spectrum.py`, `wave_function.py`, `potential.py`; plotting stages:
+  `plot_spectrum.py`, `plot_wave_function.py`, `plot_potential.py`;
+  parameters live in `config.py`.
 - **dynamics/** — the driven trajectory/current/density pipeline, including
   the time-dependent effective potential, described in Sections 3, 5, and 6.
-  Entry points: `dynamics.py`, `current.py`,
-  `density.py`, `plot_current.py`, `plot_density.py`,
+  Entry points: `dynamics.py` (trajectory), `current_density.py` /
+  `plot_current_density.py` (spatial line current density $J_x(x,t),J_y(x,t)$),
+  `current.py` / `plot_current.py` ($x$-integrated diagnostics $I_x(t)$ and
+  $I_y(t)/L_y$, computed from the current-density file — neither is an
+  absolute current; see Section 5), `density.py` / `plot_density.py`,
   `potential_comparison.py`; parameters live in `config.py`.
-- **data/dynamics/** — saved HDF5 trajectories and derived current/density
-  files (Section 5).
+- **data/statics/**, **data/dynamics/** — saved HDF5 calculation results:
+  static spectra/wavefunctions/potentials, and driven trajectories with
+  derived current/density data (Sections 2 and 5).
 - **figures/statics/**, **figures/dynamics/** — PNGs and GIFs produced by the
   two pipelines.
 - **non_BTD.md** — a longer derivation of the gauge choice, well structure,
@@ -148,6 +155,22 @@ diagonalization (dense) or ARPACK's low-energy eigensolver (lanczos).
 **LANCZOS_DIMENSION** is only the ARPACK working-subspace size, ncv.
 Static wavefunction figures use dense diagonalization.
 
+### Saved static data
+
+Like the dynamic pipeline, each static calculation is a two-stage,
+file-based process: a `statics/spectrum.py`, `wave_function.py`, or
+`potential.py` run calculates the configured result once and saves it to an
+HDF5 file under `data/statics/`; a separate `plot_spectrum.py`,
+`plot_wave_function.py`, or `plot_potential.py` run only reads that file and
+renders the figure. Plotting never recomputes silently — a missing or
+mismatched data file stops with an instruction naming the calculation script
+to run first. Each `run_*.py` convenience script in Section 6 just chains
+both stages for one command. `--force` on either stage replaces its file
+after a deliberate configuration change; `data/statics/` and
+`figures/statics/` file names are both derived from every setting that
+affects the run, so a changed configuration produces new files rather than
+silently overwriting old ones.
+
 ### Example static figures
 
 Static spectrum: $V_{\rm DC}=0.5\hbar\omega_c$, 101 $k_y$ points, 601 SHO
@@ -161,7 +184,7 @@ Static effective potentials at zero DC bias:
 
 Static ground-state density, $k_y=-0.15\ {\rm nm}^{-1}$ and $n=0$:
 
-![Static ground-state probability density](figures/statics/probability_n0_kyminus0p15_Ve0_Nbasis201_Nx501.png)
+![Static ground-state probability density](figures/statics/probability_n0_kyminus0p15_Vdc0_Nbasis201_Nx501.png)
 
 ## 3. Driven calculation and initial state
 
@@ -231,8 +254,9 @@ independent observable branches:
 
 ~~~text
 dynamics.py  →  trajectory_RUN_TAG.h5
-                    ├→ density.py  → density_RUN_TAG_Nx....h5 → plot_density.py
-                    └→ current.py  → current_RUN_TAG_Nx....h5 → plot_current.py
+                    ├→ density.py         → density_RUN_TAG_Nx....h5         → plot_density.py
+                    └→ current_density.py → current_density_RUN_TAG_Nx....h5 → plot_current_density.py
+                                                          └→ current.py      → current_RUN_TAG_Nx....h5 → plot_current.py
 ~~~
 
 ### Dynamic initial-state solver
@@ -322,7 +346,8 @@ where $T$ is **TOTAL_TIME** and $N_t$ is **NUMBER_OF_STEPS**.
 
 ## 5. Current observable
 
-For a channel normalized along $x$, the plotted line charge current is
+For a channel normalized along $x$ ($\int|\psi(x,t)|^2dx=1$), the local line
+current density is
 
 $$
 J_x(x,t)=-\frac{e\hbar}{m^\ast}
@@ -337,20 +362,75 @@ $$
 The vector-potential contribution in $J_y$ is required for the mechanical
 current.
 
-### Saved current data
+These two components are **not** on equal footing, and neither $x$-integral
+below is an absolute current in amperes for a specific device. Write the
+full wavefunction as $\Psi(x,y,t)=\psi(x,t)e^{ik_yy}/\sqrt{L_y}$, so the
+properly normalized 2D charge current density is $J_x(x,t)/L_y$ and
+$J_y(x,t)/L_y$ (this repository never introduces $L_y$ as an actual number;
+see the model exclusions in the introduction — no sum over occupied $k_y$
+channels).
 
-**dynamics/current.py** is stage 2 of the pipeline. It reads the saved
-trajectory, reconstructs $\psi$ and $\partial_x\psi$, calculates $J_x$ and
-$J_y$, and saves
+- **$J_x$:** integrating the 2D density over the periodic $y$ direction
+  reintroduces exactly one factor of $L_y$ ($\int_0^{L_y}\!dy\,J_x/L_y=J_x$),
+  so $J_x(x,t)$ is *already* a well-defined, $L_y$-independent current
+  crossing position $x$ (it also satisfies the 1D continuity equation
+  $\partial_t(-e|\psi|^2)+\partial_xJ_x=0$). Integrating it again over $x$,
+
+  $$
+  I_x(t)=\int J_x(x,t)\,dx,
+  $$
+
+  sums together current values at *different* positions and is **not** a
+  new physical quantity. It is kept only because it was already used as a
+  diagnostic comparison scalar.
+
+- **$J_y$:** there is no such cancellation. $J_y(x,t)$ is a genuine linear
+  density in $x$, and
+
+  $$
+  \frac{I_y(t)}{L_y}=\int J_y(x,t)\,dx
+  $$
+
+  is the transverse current **per unit channel length $L_y$** — i.e. its
+  value at $L_y=1$ a.u. — not the absolute transverse current $I_y(t)$
+  itself. Getting an absolute, $L_y$-independent current would require
+  summing over the occupied $k_y$ Fermi sea (excluded by this model), where
+  the $1/L_y$ here cancels against the $L_y$ in the $k_y$ density of states.
+
+### Saved current-density data
+
+**dynamics/current_density.py** is stage 2 of the pipeline. It reads the
+saved trajectory, reconstructs $\psi$ and $\partial_x\psi$, calculates
+$J_x(x,t)$ and $J_y(x,t)$, and saves
+
+```
+data/dynamics/current_density_RUN_TAG_Nx....h5
+```
+
+This HDF5 file contains **x_au**, **times_au**, **jx_au**, **jy_au**, and
+metadata linking it to the exact trajectory and spatial grid. It does not
+rerun time propagation. **dynamics/plot_current_density.py** is stage 3: it
+only reads the current-density HDF5 file and writes the GIF.
+
+### Saved current data ($x$-integrated; not an absolute current)
+
+**dynamics/current.py** is stage 3 of the pipeline (parallel to
+`plot_current_density.py`, both reading the same current-density file). It
+reads a saved current-density HDF5 file — the configured one by default, or
+any explicitly named file, including one produced by an older
+`current_density.py` run — integrates $J_x$ and $J_y$ over $x$, and saves
 
 ```
 data/dynamics/current_RUN_TAG_Nx....h5
 ```
 
-This HDF5 file contains **x_au**, **times_au**, **jx_au**, **jy_au**, and
-metadata linking it to the exact trajectory and spatial grid. It does not
-rerun time propagation. **dynamics/plot_current.py** is stage 3: it only reads
-the current HDF5 file and writes the GIF.
+This HDF5 file contains **times_au**, **ix_au**, **iy_per_ly_au**, and
+metadata linking it to the exact current-density file (and, transitively,
+the trajectory). It never reconstructs $\psi$ itself. The dataset is
+deliberately named **iy_per_ly_au**, not "iy_au", as a standing reminder
+that it is $I_y(t)/L_y$, not $I_y(t)$ — see Section 5. **dynamics/plot_current.py**
+is stage 4: it only reads this file and plots $I_x(t)$ (diagnostic only) and
+$I_y(t)/L_y$ as a PNG (there is no spatial axis left to animate).
 
 ### Saved density data
 
@@ -362,7 +442,7 @@ data/dynamics/density_RUN_TAG_Nx....h5
 ```
 
 Its datasets are **x_au**, **times_au**, and **density_au**, with the same
-parameter and grid provenance checks as current data. **dynamics/plot_density.py**
+parameter and grid provenance checks as current-density data. **dynamics/plot_density.py**
 only reads this density HDF5 file and writes the density GIF.
 
 ### Dynamic HDF5 file contract
@@ -373,15 +453,18 @@ the active configuration, without repeating propagation.
 
 | File type | Created by | Required input for | Main datasets |
 |---|---|---|---|
-| `trajectory_*.h5` | `dynamics.py` | `current.py`, `density.py` | `states_sho_coefficients`, `times_au` |
-| `current_*.h5` | `current.py` | `plot_current.py` | `x_au`, `times_au`, `jx_au`, `jy_au` |
+| `trajectory_*.h5` | `dynamics.py` | `current_density.py`, `density.py` | `states_sho_coefficients`, `times_au` |
+| `current_density_*.h5` | `current_density.py` | `plot_current_density.py`, `current.py` | `x_au`, `times_au`, `jx_au`, `jy_au` |
+| `current_*.h5` | `current.py` | `plot_current.py` | `times_au`, `ix_au`, `iy_per_ly_au` |
 | `density_*.h5` | `density.py` | `plot_density.py` | `x_au`, `times_au`, `density_au` |
 
-Every file also stores JSON metadata.  `current.py` and `density.py` take the
-basis size, $m^\ast$, $B_0$, $L$, $k_y$, and drive settings from the selected
-**trajectory** metadata.  They therefore do not silently use a different
-current value of `config.py`.  The two-file comparison modes require matching
-physics, numerical parameters, and $x,t$ grids; only `AC_WAVEFORM` may differ.
+Every file also stores JSON metadata.  `current_density.py` and `density.py`
+take the basis size, $m^\ast$, $B_0$, $L$, $k_y$, and drive settings from the
+selected **trajectory** metadata; `current.py` takes its provenance from the
+selected **current-density** metadata.  They therefore do not silently use a
+different current value of `config.py`.  The two-file comparison modes
+require matching physics, numerical parameters, and $x,t$ grids; only
+`AC_WAVEFORM` may differ.
 
 ## 6. Dynamic workflow and commands
 
@@ -393,31 +476,51 @@ python -m pip install numpy scipy matplotlib pillow h5py
 # Stage 1: calculate the wavefunction trajectory once from dynamics/config.py.
 python -m dynamics.dynamics
 
-# Stage 2: derive and save Jx, Jy from that trajectory.
-python -m dynamics.current
+# Stage 2: derive and save the spatial line current density Jx(x,t), Jy(x,t)
+# from that trajectory.
+python -m dynamics.current_density
 
 # Stage 2: independently derive and save |psi(x,t)|^2 from that trajectory.
 python -m dynamics.density
 
-# Stage 3: draw GIFs; no wavefunction or observable is recalculated.
-python -m dynamics.plot_current
+# Stage 3: integrate Jx, Jy over x from the current-density file above;
+# never reconstructs psi itself. Ix(t) is diagnostic only; Iy(t) here is
+# really Iy(t)/Ly (per unit channel length), not an absolute current --
+# see Section 5.
+python -m dynamics.current
+
+# Stage 3/4: draw GIFs/PNGs; no wavefunction or observable is recalculated.
+python -m dynamics.plot_current_density   # GIF of Jx(x,t), Jy(x,t)
+python -m dynamics.plot_current           # PNG of Ix(t), Iy(t)/Ly
 python -m dynamics.plot_density
 
 # Force a replacement only after deliberately changing a parameter.
 python -m dynamics.dynamics --force
+python -m dynamics.current_density --force
 python -m dynamics.current --force
 python -m dynamics.density --force
 
-# Potential comparison and independent static figures.
+# Potential comparison animation (dynamics).
 python -m dynamics.potential_comparison
-python statics/run_spectrum.py
-python statics/run_wave_function.py
-python statics/run_potential.py
+
+# Independent static calculations, following the same two-stage pattern as
+# dynamics: stage 1 calculates (or reuses) the HDF5 data under data/statics/;
+# stage 2 only reads that file and plots it. Pass --force to stage 1 to
+# replace stale saved data after a config.py change.
+python -m statics.spectrum          # stage 1: calculate and save
+python -m statics.plot_spectrum     # stage 2: plot from saved data only
+python -m statics.wave_function
+python -m statics.plot_wave_function
+python -m statics.potential
+python -m statics.plot_potential
 ~~~
 
 The equivalent direct commands are available after `cd dynamics`:
-`python dynamics.py`, `python current.py`, `python density.py`,
-`python plot_current.py`, and `python plot_density.py`.
+`python dynamics.py`, `python current_density.py`, `python current.py`,
+`python density.py`, `python plot_current_density.py`,
+`python plot_current.py`, and `python plot_density.py`. Likewise after
+`cd statics`: `python spectrum.py`, `python plot_spectrum.py`, and the
+`wave_function`/`potential` equivalents.
 
 ### Process any saved trajectory or observable file
 
@@ -433,50 +536,74 @@ For example, from the repository root:
 TRAJECTORY=data/dynamics/trajectory_y6_3_cos_kym0p15nm1_Vdc0hwc_Vac0p5hwc_w1wc_n0_Nbasis501_Nt1000_T10periods.h5
 
 # Stage 2: no propagation.  The default is Nx=SPATIAL_GRID_POINTS (currently 401).
-python -m dynamics.current "$TRAJECTORY"
+python -m dynamics.current_density "$TRAJECTORY"
 python -m dynamics.density "$TRAJECTORY"
 
 # --nx controls only the real-space reconstruction grid, not the SHO basis
 # or the propagated wavefunction.  --output selects an explicit destination.
-python -m dynamics.current "$TRAJECTORY" --nx 801 \
-  --output data/dynamics/current_cos_n0_Nx801.h5
+python -m dynamics.current_density "$TRAJECTORY" --nx 801 \
+  --output data/dynamics/current_density_cos_n0_Nx801.h5
 python -m dynamics.density "$TRAJECTORY" --nx 801 \
   --output data/dynamics/density_cos_n0_Nx801.h5
 
-# Stage 3: only read observable data and render a GIF.
+# Stage 3: integrate the current density over x; no wavefunction reconstruction.
+python -m dynamics.current data/dynamics/current_density_cos_n0_Nx801.h5 \
+  --output data/dynamics/current_cos_n0_Nx801.h5
+
+# Stage 3/4: only read observable data and render a GIF/PNG.
+python -m dynamics.plot_current_density data/dynamics/current_density_cos_n0_Nx801.h5 \
+  --output figures/dynamics/current_density_cos_n0_Nx801.gif
 python -m dynamics.plot_current data/dynamics/current_cos_n0_Nx801.h5 \
-  --output figures/dynamics/current_cos_n0_Nx801.gif
+  --output figures/dynamics/current_cos_n0_Nx801.png
 python -m dynamics.plot_density data/dynamics/density_cos_n0_Nx801.h5 \
   --output figures/dynamics/density_cos_n0_Nx801.gif
 ~~~
 
-With no `--output`, stage 2 writes `current_<trajectory-tag>_Nx<...>.h5` or
-`density_<trajectory-tag>_Nx<...>.h5` beside the selected trajectory.  Use
-**--force** only to deliberately replace an existing HDF5 file.  The plotters
-support **--frame-stride N** to use every $N$th stored snapshot.
+With no `--output`, stage 2 writes `current_density_<trajectory-tag>_Nx<...>.h5`
+or `density_<trajectory-tag>_Nx<...>.h5` beside the selected trajectory, and
+stage 3's `current.py` writes `current_<current-density-tag>.h5` beside the
+selected current-density file.  Use **--force** only to deliberately replace
+an existing HDF5 file.  The GIF plotters support **--frame-stride N** to use
+every $N$th stored snapshot.
 
 When working inside `dynamics/`, bare names such as
-`trajectory_...h5`, `current_...h5`, and `density_...h5` are automatically
-looked up under `../data/dynamics/`.  An explicit relative or absolute path is
-used as written.
+`trajectory_...h5`, `current_density_...h5`, `current_...h5`, and
+`density_...h5` are automatically looked up under `../data/dynamics/`.  An
+explicit relative or absolute path is used as written.
 
-### Compare two saved current datasets
+### Compare two saved current-density datasets
 
 To compare two runs without recalculating either one, pass their HDF5 files to
-**plot_current.py**. The overlay GIF draws cosine as a red solid line and sine
-as a teal dashed line at each saved time. The comparison PNG overlays
-$\int J_xdx$ and $\int J_ydx$ and shows the local differences
-$\Delta J_x(x,t)$ and $\Delta J_y(x,t)$.
+**plot_current_density.py**. The overlay GIF draws cosine as a red solid line
+and sine as a teal dashed line at each saved time. The comparison PNG shows
+the local differences $\Delta J_x(x,t)$ and $\Delta J_y(x,t)$.
 Both modes accept `--output FILE`; `--frame-stride N` applies to `--overlay`.
-By default the overlay uses the same `FRAME_STRIDE` as an ordinary current
-GIF, rather than skipping additional frames.
+By default the overlay uses the same `FRAME_STRIDE` as an ordinary
+current-density GIF, rather than skipping additional frames.
 
 ~~~bash
 cd dynamics
 
-python plot_current.py --overlay \
-  current_y6_3_cos_kym0p15nm1_Vdc0hwc_Vac0p5hwc_w1wc_n0_Nbasis501_Nt1000_T10periods_Nx401.h5 \
-  current_y6_3_sin_kym0p15nm1_Vdc0hwc_Vac0p5hwc_w1wc_n0_Nbasis501_Nt1000_T10periods_Nx401.h5
+python plot_current_density.py --overlay \
+  current_density_y6_3_cos_kym0p15nm1_Vdc0hwc_Vac0p5hwc_w1wc_n0_Nbasis501_Nt1000_T10periods_Nx401.h5 \
+  current_density_y6_3_sin_kym0p15nm1_Vdc0hwc_Vac0p5hwc_w1wc_n0_Nbasis501_Nt1000_T10periods_Nx401.h5
+
+python plot_current_density.py --compare \
+  current_density_y6_3_cos_kym0p15nm1_Vdc0hwc_Vac0p5hwc_w1wc_n0_Nbasis501_Nt1000_T10periods_Nx401.h5 \
+  current_density_y6_3_sin_kym0p15nm1_Vdc0hwc_Vac0p5hwc_w1wc_n0_Nbasis501_Nt1000_T10periods_Nx401.h5
+~~~
+
+### Compare two saved (x-integrated) current datasets
+
+**plot_current.py --compare** overlays $I_x(t)=\int J_x\,dx$ (diagnostic
+only) and $I_y(t)/L_y=\int J_y\,dx$ (transverse current per unit channel
+length, not an absolute current — see Section 5) for two saved `current_*.h5`
+files (these must already exist — build them with `dynamics.current` first)
+as a single PNG. It accepts `--output FILE`; there is no `--overlay`/animation
+mode since there is no spatial axis left after integrating over $x$.
+
+~~~bash
+cd dynamics
 
 python plot_current.py --compare \
   current_y6_3_cos_kym0p15nm1_Vdc0hwc_Vac0p5hwc_w1wc_n0_Nbasis501_Nt1000_T10periods_Nx401.h5 \
@@ -507,7 +634,8 @@ python plot_density.py --compare \
 ~~~
 
 Figures are below **figures/dynamics/** and **figures/statics/**. Trajectories,
-density data, and current data are below **data/dynamics/**. A missing input
+density data, and current data are below **data/dynamics/**; saved spectra,
+wavefunctions, and potentials are below **data/statics/**. A missing input
 file stops the next stage with an instruction; it never silently recomputes an
 earlier stage.
 
@@ -576,8 +704,10 @@ To regenerate one selected waveform/state, set `AC_WAVEFORM` and
 cd dynamics
 python dynamics.py --force
 python density.py --force
+python current_density.py --force
 python current.py --force
 python plot_density.py
+python plot_current_density.py
 python plot_current.py
 ~~~
 
@@ -587,26 +717,34 @@ python plot_current.py
   initial density has the expected symmetric two-lobe form near the two
   negative-$k_y$ wells (roughly $x=\pm130$ nm in the plotted frame).  The
   lobes remain confined well inside the $\pm223$ nm reconstruction window.
-- `current_*.h5` and current GIFs show the mechanical line currents
-  $J_x(x,t)$ and $J_y(x,t)$.  $J_x$ oscillates and changes sign under the AC
-  drive.  A nonzero $J_y$ is expected even for a symmetric density because it
-  contains $\hbar k_y+eB_0x^2/(2L)$; it is not the canonical-momentum current.
+- `current_density_*.h5` and current-density GIFs show the mechanical line
+  currents $J_x(x,t)$ and $J_y(x,t)$.  $J_x$ oscillates and changes sign
+  under the AC drive.  A nonzero $J_y$ is expected even for a symmetric
+  density because it contains $\hbar k_y+eB_0x^2/(2L)$; it is not the
+  canonical-momentum current.
+- `current_*.h5` and its plot show the $x$-integrated diagnostics
+  $I_x(t)=\int J_x\,dx$ and $I_y(t)/L_y=\int J_y\,dx$ (Section 5); neither is
+  an absolute current — $I_x$ has no established physical meaning, and the
+  $J_y$ integral is the transverse current per unit channel length $L_y$,
+  not $I_y(t)$ itself.
 - The overlay GIFs show the two waveforms on shared axes: cosine is red solid,
   sine is teal dashed.  The frame annotation is now $t/T_{\rm ac}$, running
   from 0 to 10, rather than an ambiguous fraction of the whole simulation.
 
 ![n=0 density: cosine (solid red) and sine (dashed teal)](figures/dynamics/density_overlay_cos_vs_sin_y6_3_cos_kym0p15nm1_Vdc0hwc_Vac0p5hwc_w1wc_n0_Nbasis501_Nt1000_T10periods_Nx401.gif)
 
-![n=0 current: cosine (solid red) and sine (dashed teal)](figures/dynamics/current_overlay_cos_vs_sin_kym0p15nm1_Vdc0hwc_Vac0p5hwc_w1wc_n0_Nbasis501_Nt1000_T10periods_Nx401.gif)
+![n=0 current density: cosine (solid red) and sine (dashed teal)](figures/dynamics/current_density_overlay_cos_vs_sin_kym0p15nm1_Vdc0hwc_Vac0p5hwc_w1wc_n0_Nbasis501_Nt1000_T10periods_Nx401.gif)
 
 For the currently saved $n=0$ files, the coefficient norm remains in
 $[1-1.0\times10^{-12},1]$, and the reconstructed real-space normalization is
-1.000000000 to the printed precision.  The integrated-current ranges are
+1.000000000 to the printed precision.  The $x$-integrated diagnostic ranges
+(from `dynamics.current`, i.e. $I_x(t)=\int J_x\,dx$ and
+$I_y(t)/L_y=\int J_y\,dx$; neither is an absolute current, see Section 5) are
 
-| waveform | $\min,\max\int J_xdx$ (a.u.) | $\min,\max\int J_ydx$ (a.u.) |
+| waveform | $\min,\max\,I_x(t)$ (a.u.) | $\min,\max\,I_y(t)/L_y$ (a.u.) |
 |---|---:|---:|
-| cos | $[-1.4681,\,+1.4756]\times10^{-2}$ | $[2.8302,\,3.7208]\times10^{-3}$ |
-| sin | $[-1.6160,\,+1.5529]\times10^{-2}$ | $[2.7778,\,3.8536]\times10^{-3}$ |
+| cos | $[-1.4681,\,+1.4757]\times10^{-2}$ | $[2.8282,\,3.7183]\times10^{-3}$ |
+| sin | $[-1.6160,\,+1.5529]\times10^{-2}$ | $[2.7785,\,3.8504]\times10^{-3}$ |
 
 The largest saved n=0 cosine--sine density separation is
 $\max_t\sqrt{\int(\rho_{\cos}-\rho_{\sin})^2dx}=1.1638\times10^{-2}$;

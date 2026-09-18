@@ -70,13 +70,13 @@ V_DC = 0 * HBAR * CYCLOTRON_FREQUENCY
 V_AC = 0.5 * HBAR * CYCLOTRON_FREQUENCY
 AC_FREQUENCY = CYCLOTRON_FREQUENCY
 # Eigenstate index of H_static(V_DC); n=0 is the ground state.
-INITIAL_STATE_INDEX = 2
+INITIAL_STATE_INDEX = 0
 NUMBER_OF_STEPS = 1000
 TOTAL_TIME = 10 * 2 * np.pi / AC_FREQUENCY
 SPATIAL_GRID_POINTS = 401
 # Propagation and plotted potentials use this same waveform. ``sin`` and
 # ``cos`` are supported.
-AC_WAVEFORM = "cos"
+AC_WAVEFORM = "sin"
 
 # ANIMATION USER PARAMETERS
 FRAME_STRIDE = 3
@@ -110,10 +110,16 @@ RUN_TAG = (
 OUTPUT_DIRECTORY = PROJECT_ROOT / "figures" / "dynamics"
 DATA_DIRECTORY = PROJECT_ROOT / "data" / "dynamics"
 TRAJECTORY_FILE = DATA_DIRECTORY / f"trajectory_{RUN_TAG}.h5"
-CURRENT_DATA_FILE = DATA_DIRECTORY / f"current_{RUN_TAG}_Nx{SPATIAL_GRID_POINTS}.h5"
+# Stage 2: spatially resolved line current density (Jx(x,t), Jy(x,t)).
+CURRENT_DENSITY_DATA_FILE = DATA_DIRECTORY / f"current_density_{RUN_TAG}_Nx{SPATIAL_GRID_POINTS}.h5"
 DENSITY_DATA_FILE = DATA_DIRECTORY / f"density_{RUN_TAG}_Nx{SPATIAL_GRID_POINTS}.h5"
 DENSITY_GIF = OUTPUT_DIRECTORY / f"density_{RUN_TAG}.gif"
-CURRENT_GIF = OUTPUT_DIRECTORY / f"current_{RUN_TAG}.gif"
+CURRENT_DENSITY_GIF = OUTPUT_DIRECTORY / f"current_density_{RUN_TAG}.gif"
+# Stage 3: x-integrated Ix(t) (diagnostic only) and Iy(t) per unit channel
+# length Ly (not an absolute current -- see dynamics/current.py), derived
+# from the current-density file above.
+CURRENT_DATA_FILE = DATA_DIRECTORY / f"current_{RUN_TAG}_Nx{SPATIAL_GRID_POINTS}.h5"
+CURRENT_FIGURE = OUTPUT_DIRECTORY / f"current_{RUN_TAG}_Nx{SPATIAL_GRID_POINTS}.png"
 POTENTIAL_COMPARISON_GIF = OUTPUT_DIRECTORY / (
     "potential_sin_cos_"
     f"ky{_number_token(KY / AU_TO_NM)}nm1_"
