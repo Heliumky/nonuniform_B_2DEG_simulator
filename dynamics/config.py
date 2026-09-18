@@ -61,29 +61,36 @@ MAGNETIC_LENGTH_SCALE = 16 * np.pi**2 / AU_TO_NM
 # USER PARAMETERS
 BASIS_SIZE = 501
 KY = -0.15 * AU_TO_NM                 # au; input value is -0.15 nm^-1
+# ARPACK's ``ncv`` subspace size used only to prepare a DC-biased (V_DC != 0)
+# initial static eigenstate.  The exactly symmetric V_DC = 0 double well uses
+# dense eigh to keep its near-degenerate even/odd states well defined.  This
+# setting does not affect SciPy's adaptive ``expm_multiply`` propagation.
+INITIAL_EIGSH_NCV = 30
 V_DC = 0 * HBAR * CYCLOTRON_FREQUENCY
 V_AC = 0.5 * HBAR * CYCLOTRON_FREQUENCY
 AC_FREQUENCY = CYCLOTRON_FREQUENCY
 # Eigenstate index of H_static(V_DC); n=0 is the ground state.
-INITIAL_STATE_INDEX = 1
+INITIAL_STATE_INDEX = 2
 NUMBER_OF_STEPS = 1000
 TOTAL_TIME = 10 * 2 * np.pi / AC_FREQUENCY
-# ARPACK's ``ncv`` subspace size used only to prepare the initial static
-# eigenstate.  It does not affect SciPy's adaptive ``expm_multiply`` used for
-# time propagation.
-INITIAL_EIGSH_NCV = 30
 SPATIAL_GRID_POINTS = 401
 # Propagation and plotted potentials use this same waveform. ``sin`` and
 # ``cos`` are supported.
-AC_WAVEFORM = "sin"
+AC_WAVEFORM = "cos"
 
 # ANIMATION USER PARAMETERS
 FRAME_STRIDE = 3
+# Comparisons use the same temporal sampling as ordinary one-file GIFs.
+# Increase this only when deliberately trading temporal resolution for a
+# smaller/faster-to-render comparison animation.
+COMPARISON_FRAME_STRIDE = FRAME_STRIDE
 FRAMES_PER_SECOND = 20
 FIGURE_SIZE = (7, 7)
-# The t=0 potential comparison always renders both sin and cos; it is
+# The potential-comparison animation always renders both sin and cos. It is
 # independent of ``AC_WAVEFORM`` above.
 POTENTIAL_COMPARISON_FIGURE_SIZE = (11, 5.2)
+POTENTIAL_COMPARISON_PERIODS = 1
+POTENTIAL_COMPARISON_FRAMES = 121
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -101,13 +108,18 @@ RUN_TAG = (
     f"T{_number_token(TOTAL_TIME * AC_FREQUENCY / (2 * np.pi))}periods"
 )
 OUTPUT_DIRECTORY = PROJECT_ROOT / "figures" / "dynamics"
-PROBABILITY_GIF = OUTPUT_DIRECTORY / f"probability_{RUN_TAG}.gif"
+DATA_DIRECTORY = PROJECT_ROOT / "data" / "dynamics"
+TRAJECTORY_FILE = DATA_DIRECTORY / f"trajectory_{RUN_TAG}.h5"
+CURRENT_DATA_FILE = DATA_DIRECTORY / f"current_{RUN_TAG}_Nx{SPATIAL_GRID_POINTS}.h5"
+DENSITY_DATA_FILE = DATA_DIRECTORY / f"density_{RUN_TAG}_Nx{SPATIAL_GRID_POINTS}.h5"
+DENSITY_GIF = OUTPUT_DIRECTORY / f"density_{RUN_TAG}.gif"
 CURRENT_GIF = OUTPUT_DIRECTORY / f"current_{RUN_TAG}.gif"
-POTENTIAL_T0_COMPARISON_PNG = OUTPUT_DIRECTORY / (
-    "potential_t0_sin_cos_"
+POTENTIAL_COMPARISON_GIF = OUTPUT_DIRECTORY / (
+    "potential_sin_cos_"
     f"ky{_number_token(KY / AU_TO_NM)}nm1_"
     f"Vdc{_number_token(V_DC / (HBAR * CYCLOTRON_FREQUENCY))}hwc_"
     f"Vac{_number_token(V_AC / (HBAR * CYCLOTRON_FREQUENCY))}hwc_"
     f"w{_number_token(AC_FREQUENCY / CYCLOTRON_FREQUENCY)}wc_"
-    f"Nx{SPATIAL_GRID_POINTS}.png"
+    f"Nx{SPATIAL_GRID_POINTS}_"
+    f"T{_number_token(POTENTIAL_COMPARISON_PERIODS)}periods.gif"
 )
