@@ -179,11 +179,12 @@ The initial state is prepared from the **DC-only** static problem:
 $$
 \boxed{
 H_{\rm static}(k_y;V_{\rm DC})\phi_n=E_n\phi_n,\qquad
-\psi_{k_y}(x,0)=\phi_{\mathrm{INITIAL\_STATE\_INDEX}}(x).
+\psi_{k_y}(x,0)=\phi_n(x).
 }
 $$
 
-The checked-in configuration currently has **INITIAL_STATE_INDEX = 0**, hence
+Here $n$ is the config parameter **INITIAL_STATE_INDEX**. The checked-in
+configuration currently has **INITIAL_STATE_INDEX = 0**, hence
 
 $$
 \psi_{k_y}(x,0)=\phi_0(x),
@@ -213,17 +214,17 @@ Taylor series; it is not a user-controlled Lanczos exponential.
 
 Each completed driven propagation is saved once as an HDF5 file:
 
-$$
-\mathrm{data/dynamics/trajectory\_RUN\_TAG.h5}.
-$$
+```
+data/dynamics/trajectory_RUN_TAG.h5
+```
 
 The file contains the complex SHO coefficient array
 $c_j(t_i)$ in the dataset **states_sho_coefficients**, the atomic-unit time
 axis in **times_au**, and JSON metadata containing every physical and numerical
 parameter used in the run. The saved snapshots are at
-$t_i=\Delta t,2\Delta t,\ldots,\mathrm{TOTAL\_TIME}$, matching the propagator's
-existing output convention. The density and current calculation stages read
-this file; they never start a propagation implicitly.
+$t_i=\Delta t,2\Delta t,\ldots,T$ (config parameter **TOTAL_TIME**), matching
+the propagator's existing output convention. The density and current
+calculation stages read this file; they never start a propagation implicitly.
 
 The public dynamic-data pipeline has one wavefunction stage and two
 independent observable branches:
@@ -305,9 +306,11 @@ The two conversion factors are rounded display constants.
 The default time increment is
 
 $$
-\Delta t=\frac{\mathrm{TOTAL\_TIME}}{\mathrm{NUMBER\_OF\_STEPS}}
-=\frac{2\pi/\omega_c}{100}.
+\Delta t=\frac{T}{N_t}
+=\frac{2\pi/\omega_c}{100},
 $$
+
+where $T$ is **TOTAL_TIME** and $N_t$ is **NUMBER_OF_STEPS**.
 
 ### Current static-figure configuration: statics/config.py
 
@@ -340,9 +343,9 @@ current.
 trajectory, reconstructs $\psi$ and $\partial_x\psi$, calculates $J_x$ and
 $J_y$, and saves
 
-$$
-\mathrm{data/dynamics/current\_RUN\_TAG\_Nx\ldots.h5}.
-$$
+```
+data/dynamics/current_RUN_TAG_Nx....h5
+```
 
 This HDF5 file contains **x_au**, **times_au**, **jx_au**, **jy_au**, and
 metadata linking it to the exact trajectory and spatial grid. It does not
@@ -354,9 +357,9 @@ the current HDF5 file and writes the GIF.
 **dynamics/density.py** is the density branch. It reads the trajectory,
 reconstructs $|\psi(x,t)|^2$, and saves
 
-$$
-\mathrm{data/dynamics/density\_RUN\_TAG\_Nx\ldots.h5}.
-$$
+```
+data/dynamics/density_RUN_TAG_Nx....h5
+```
 
 Its datasets are **x_au**, **times_au**, and **density_au**, with the same
 parameter and grid provenance checks as current data. **dynamics/plot_density.py**

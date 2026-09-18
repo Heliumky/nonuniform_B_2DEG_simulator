@@ -635,7 +635,8 @@ The implementation has two paths.
 | Lowest bands of a large sweep | `spectrum.py`, `method="lanczos"` | ARPACK implicitly restarted Lanczos via `scipy.sparse.linalg.eigsh` |
 
 The Lanczos wrapper is `lanczos.py:lanczos_eigenpairs`. It returns the lowest
-`state_count` Ritz pairs, ordered by energy: $n=0,\ldots,\text{state\_count}-1$.
+`state_count` Ritz pairs, ordered by energy: $n=0,\ldots,N-1$, where $N$ is
+`state_count`.
 
 ---
 
