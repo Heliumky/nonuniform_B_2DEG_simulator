@@ -59,7 +59,7 @@ two-dimensional single-particle Hamiltonian is
 
 $$
 \boxed{
-H(t)=\frac{1}{2m^*}
+H(t)=\frac{1}{2m^\ast}
 \left[
 p_x^2+
 \left(p_y+\frac{eB_0x^2}{2L}\right)^2
@@ -86,8 +86,8 @@ $$
 
 $$
 \boxed{
-H_{k_y}(t)=\frac{p_x^2}{2m^*}
-+\frac{1}{2m^*}
+H_{k_y}(t)=\frac{p_x^2}{2m^\ast}
++\frac{1}{2m^\ast}
 \left(\hbar k_y+\frac{eB_0x^2}{2L}\right)^2
 +\frac{e}{L}[V_{\rm DC}+V_{\rm AC}f(\omega_{\rm ac}t)]x .
 }
@@ -97,10 +97,10 @@ The polynomial form represented in the SHO basis is
 
 $$
 \begin{aligned}
-H_{k_y}(t)={}&\frac{p_x^2}{2m^*}
-+\frac{\hbar^2k_y^2}{2m^*}I
-+\frac{\hbar k_y eB_0}{2m^*L}x^2\\
-&+\frac{e^2B_0^2}{8m^*L^2}x^4
+H_{k_y}(t)={}&\frac{p_x^2}{2m^\ast}
++\frac{\hbar^2k_y^2}{2m^\ast}I
++\frac{\hbar k_y eB_0}{2m^\ast{}L}x^2\\
+&+\frac{e^2B_0^2}{8m^\ast{}L^2}x^4
 +\frac{e}{L}[V_{\rm DC}+V_{\rm AC}f(\omega_{\rm ac}t)]x .
 \end{aligned}
 $$
@@ -115,8 +115,8 @@ The static calculation contains the DC bias but no AC field:
 $$
 \boxed{
 H_{\rm static}(k_y;V_{\rm DC})=
-\frac{p_x^2}{2m^*}
-+\frac{1}{2m^*}
+\frac{p_x^2}{2m^\ast}
++\frac{1}{2m^\ast}
 \left(\hbar k_y+\frac{eB_0x^2}{2L}\right)^2
 +\frac{eV_{\rm DC}}{L}x .
 }
@@ -277,9 +277,9 @@ currently duplicated; keep them identical for a consistent comparison.
 |---|---|---:|
 | **HBAR** | Reduced Planck constant | $1$ a.u. |
 | **ELEMENTARY_CHARGE** | Positive charge magnitude $e$ | $1$ a.u. |
-| **EFFECTIVE_MASS** | Effective mass $m^*$ | $0.067m_e$ |
+| **EFFECTIVE_MASS** | Effective mass $m^\ast$ | $0.067m_e$ |
 | **MAGNETIC_FIELD** | Field scale $B_0$ | $1.65$ T |
-| **CYCLOTRON_FREQUENCY** | $\omega_c=eB_0/m^*$ | $1.0479517\times10^{-4}$ a.u. |
+| **CYCLOTRON_FREQUENCY** | $\omega_c=eB_0/m^\ast$ | $1.0479517\times10^{-4}$ a.u. |
 | **MAGNETIC_LENGTH_SCALE** | Gradient length $L$ | $2985.14$ bohr $=157.91$ nm |
 | **AU_TO_MEV** | Hartree-to-meV display conversion | $2.7\times10^4$ |
 | **AU_TO_NM** | bohr-to-nm display conversion | $5.29\times10^{-2}$ |
@@ -322,12 +322,12 @@ $$
 For a channel normalized along $x$, the plotted line charge current is
 
 $$
-J_x(x,t)=-\frac{e\hbar}{m^*}
-\operatorname{Im}[\psi^*(x,t)\partial_x\psi(x,t)],
+J_x(x,t)=-\frac{e\hbar}{m^\ast}
+{\rm Im}[\psi^\ast(x,t)\partial_x\psi(x,t)],
 $$
 
 $$
-J_y(x,t)=-\frac{e}{m^*}
+J_y(x,t)=-\frac{e}{m^\ast}
 \left(\hbar k_y+\frac{eB_0x^2}{2L}\right)|\psi(x,t)|^2.
 $$
 
@@ -375,7 +375,7 @@ the active configuration, without repeating propagation.
 | `density_*.h5` | `density.py` | `plot_density.py` | `x_au`, `times_au`, `density_au` |
 
 Every file also stores JSON metadata.  `current.py` and `density.py` take the
-basis size, $m^*$, $B_0$, $L$, $k_y$, and drive settings from the selected
+basis size, $m^\ast$, $B_0$, $L$, $k_y$, and drive settings from the selected
 **trajectory** metadata.  They therefore do not silently use a different
 current value of `config.py`.  The two-file comparison modes require matching
 physics, numerical parameters, and $x,t$ grids; only `AC_WAVEFORM` may differ.

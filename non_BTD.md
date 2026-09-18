@@ -89,14 +89,14 @@ Indeed, $\partial_xA_y=B_0x/L$ and $-\partial_x\phi=V_e(t)/L$.
 For charge $q=-e$, minimal coupling gives
 
 $$
-H(t)=\frac{1}{2m^*}\left[-i\hbar\boldsymbol\nabla+e\mathbf A(x)\right]^2-e\phi(x,t).
+H(t)=\frac{1}{2m^\ast}\left[-i\hbar\boldsymbol\nabla+e\mathbf A(x)\right]^2-e\phi(x,t).
 $$
 
 With the chosen scalar potential,
 
 $$
-H(t)=\frac{p_x^2}{2m^*}
-+\frac{1}{2m^*}\left(p_y+\frac{eB_0x^2}{2L}\right)^2
+H(t)=\frac{p_x^2}{2m^\ast}
++\frac{1}{2m^\ast}\left(p_y+\frac{eB_0x^2}{2L}\right)^2
 +\frac{eV_e(t)}Lx.
 $$
 
@@ -134,12 +134,12 @@ with $\int dx\,|\psi_{k_y}|^2=1$ for one occupied channel.
 Substituting $p_y\to\hbar k_y$ gives
 
 $$
-H_{k_y}(t)=\frac{p_x^2}{2m^*}+V_{k_y}(x,t),
+H_{k_y}(t)=\frac{p_x^2}{2m^\ast}+V_{k_y}(x,t),
 $$
 
 $$
 V_{k_y}(x,t)=
-\frac{1}{2m^*}\left(\hbar k_y+\frac{eB_0x^2}{2L}\right)^2
+\frac{1}{2m^\ast}\left(\hbar k_y+\frac{eB_0x^2}{2L}\right)^2
 +\frac{eV_e(t)}Lx.
 $$
 
@@ -153,10 +153,10 @@ Expanding the effective potential,
 
 $$
 \begin{aligned}
-H_{k_y}(t)=&\frac{p_x^2}{2m^*}
-+\frac{\hbar^2k_y^2}{2m^*}I
-+\frac{\hbar k_yeB_0}{2m^*L}x^2\\
-&+\frac{e^2B_0^2}{8m^*L^2}x^4
+H_{k_y}(t)=&\frac{p_x^2}{2m^\ast}
++\frac{\hbar^2k_y^2}{2m^\ast}I
++\frac{\hbar k_yeB_0}{2m^\ast{}L}x^2\\
+&+\frac{e^2B_0^2}{8m^\ast{}L^2}x^4
 +\frac{eV_e(t)}Lx.
 \end{aligned}
 $$
@@ -178,22 +178,22 @@ c_x0 = hbar**2*ky**2 / (2*m_star)
 Set $V_e(t)=V_e$ constant and first take $V_e=0$. Define
 
 $$
-\alpha=\frac{eB_0}{2L}=\frac{m^*\omega_c}{2L},
+\alpha=\frac{eB_0}{2L}=\frac{m^\ast\omega_c}{2L},
 \qquad
-V_0(x)=\frac{(\hbar k_y+\alpha x^2)^2}{2m^*}.
+V_0(x)=\frac{(\hbar k_y+\alpha x^2)^2}{2m^\ast}.
 $$
 
 Its derivative is
 
 $$
-\frac{dV_0}{dx}=\frac{2\alpha x}{m^*}(\hbar k_y+\alpha x^2).
+\frac{dV_0}{dx}=\frac{2\alpha x}{m^\ast}(\hbar k_y+\alpha x^2).
 $$
 
 Thus the stationary points are $x=0$ and, only if $k_y<0$,
 
 $$
 x_\pm=\pm\sqrt{-\frac{\hbar k_y}{\alpha}}
-=\pm\sqrt{\frac{-2\hbar k_yL}{m^*\omega_c}}.
+=\pm\sqrt{\frac{-2\hbar k_yL}{m^\ast\omega_c}}.
 $$
 
 ---
@@ -203,7 +203,7 @@ $$
 At the central stationary point,
 
 $$
-V_0''(0)=\frac{2\alpha\hbar k_y}{m^*}.
+V_0''(0)=\frac{2\alpha\hbar k_y}{m^\ast}.
 $$
 
 Therefore:
@@ -251,31 +251,31 @@ $$
 This is compared with the harmonic-oscillator potential
 
 $$
-V_{\rm HO}(\xi)=\frac12m^*\omega_{\rm loc}^2\xi^2.
+V_{\rm HO}(\xi)=\frac12m^\ast\omega_{\rm loc}^2\xi^2.
 $$
 
 Thus the curvature is simply the local spring constant:
 
 $$
-\boxed{m^*\omega_{\rm loc}^2=V_0''(x_\sigma).}
+\boxed{m^\ast\omega_{\rm loc}^2=V_0''(x_\sigma).}
 $$
 
 ---
 
 # Compute the local oscillator frequency step by step
 
-Let $g(x)=\hbar k_y+\alpha x^2$, so $V_0=g^2/(2m^*)$. At either minimum, $g(x_\sigma)=0$; hence
+Let $g(x)=\hbar k_y+\alpha x^2$, so $V_0=g^2/(2m^\ast)$. At either minimum, $g(x_\sigma)=0$; hence
 
 $$
-V_0''(x_\sigma)=\frac{[g'(x_\sigma)]^2}{m^*}
-=\frac{(2\alpha x_\sigma)^2}{m^*}
-=\frac{4\alpha^2x_0^2}{m^*}.
+V_0''(x_\sigma)=\frac{[g'(x_\sigma)]^2}{m^\ast}
+=\frac{(2\alpha x_\sigma)^2}{m^\ast}
+=\frac{4\alpha^2x_0^2}{m^\ast}.
 $$
 
-Comparing with $m^*\omega_{\rm loc}^2$ gives
+Comparing with $m^\ast\omega_{\rm loc}^2$ gives
 
 $$
-\omega_{\rm loc}=\frac{2\alpha|x_0|}{m^*}
+\omega_{\rm loc}=\frac{2\alpha|x_0|}{m^\ast}
 =\omega_c\frac{|x_0|}{L}.
 $$
 
@@ -296,7 +296,7 @@ $$
 For $k_y<0$,
 
 $$
-|x_0|=\sqrt{\frac{-2\hbar k_yL}{m^*\omega_c}}
+|x_0|=\sqrt{\frac{-2\hbar k_yL}{m^\ast\omega_c}}
 \ \propto\sqrt{-k_y}.
 $$
 
@@ -378,14 +378,14 @@ Differentiating the effective Hamiltonian with respect to $k_y$ gives
 
 $$
 \frac{\partial H_{k_y}}{\partial k_y}
-=\frac{\hbar}{m^*}\left(\hbar k_y+eA_y(x)\right).
+=\frac{\hbar}{m^\ast}\left(\hbar k_y+eA_y(x)\right).
 $$
 
 For a normalized stationary state, Hellmann–Feynman gives
 
 $$
 \frac1\hbar\frac{\partial E_n(k_y)}{\partial k_y}
-=\left\langle\frac{\hbar k_y+eA_y(x)}{m^*}\right\rangle
+=\left\langle\frac{\hbar k_y+eA_y(x)}{m^\ast}\right\rangle
 =\langle v_y\rangle.
 $$
 
@@ -414,15 +414,15 @@ The paper calls the resulting expression a zero-energy solution. We denote it by
 Define
 
 $$
-f(x)=k_y+\frac{m^*\omega_c}{2\hbar L}x^2.
+f(x)=k_y+\frac{m^\ast\omega_c}{2\hbar L}x^2.
 $$
 
 At $eV_e=\hbar\omega_c/2$, the effective Hamiltonian is explicitly
 
 $$
-H_{k_y}=-\frac{\hbar^2}{2m^*}\partial_x^2
-+\frac{1}{2m^*}
-\left(\hbar k_y+\frac{m^*\omega_c}{2L}x^2\right)^2
+H_{k_y}=-\frac{\hbar^2}{2m^\ast}\partial_x^2
++\frac{1}{2m^\ast}
+\left(\hbar k_y+\frac{m^\ast\omega_c}{2L}x^2\right)^2
 +\frac{\hbar\omega_c}{2L}x.
 $$
 
@@ -452,25 +452,25 @@ The $f\chi'$ terms cancel. Crucially, $\partial_x$ differentiates $f(x)\chi(x)$ 
 For
 
 $$
-f(x)=k_y+\frac{m^*\omega_c}{2\hbar L}x^2,
+f(x)=k_y+\frac{m^\ast\omega_c}{2\hbar L}x^2,
 $$
 
 the two new pieces are
 
 $$
-\frac{\hbar^2}{2m^*}f^2
-=\frac1{2m^*}\left(\hbar k_y+\frac{m^*\omega_c}{2L}x^2\right)^2,
+\frac{\hbar^2}{2m^\ast}f^2
+=\frac1{2m^\ast}\left(\hbar k_y+\frac{m^\ast\omega_c}{2L}x^2\right)^2,
 $$
 
 $$
-\frac{\hbar^2}{2m^*}f'
+\frac{\hbar^2}{2m^\ast}f'
 =\frac{\hbar\omega_c}{2L}x.
 $$
 
-Together with $-\hbar^2\partial_x^2/(2m^*)$, these are exactly the three terms in the critical Hamiltonian displayed two slides earlier. Therefore
+Together with $-\hbar^2\partial_x^2/(2m^\ast)$, these are exactly the three terms in the critical Hamiltonian displayed two slides earlier. Therefore
 
 $$
-\boxed{H_{k_y}=\frac{\hbar^2}{2m^*}(\partial_x+f)(-\partial_x+f).}
+\boxed{H_{k_y}=\frac{\hbar^2}{2m^\ast}(\partial_x+f)(-\partial_x+f).}
 $$
 
 ---
@@ -499,7 +499,7 @@ Divide by $\psi$ and integrate:
 
 $$
 \log\psi(x)=\int^x f(s)\,ds+\log A
-=k_yx+\frac{m^*\omega_c}{6\hbar L}x^3+\log A.
+=k_yx+\frac{m^\ast\omega_c}{6\hbar L}x^3+\log A.
 $$
 
 Therefore
@@ -507,7 +507,7 @@ Therefore
 $$
 \boxed{
 \psi_{\rm form}(x)=A\exp\!\left[k_yx+
-\frac{m^*\omega_c}{6\hbar L}x^3\right]
+\frac{m^\ast\omega_c}{6\hbar L}x^3\right]
 }.
 $$
 
@@ -521,7 +521,7 @@ Its squared amplitude is
 
 $$
 |\psi_{\rm form}(x)|^2\propto
-\exp\!\left(2k_yx+\frac{m^*\omega_c}{3\hbar L}x^3\right).
+\exp\!\left(2k_yx+\frac{m^\ast\omega_c}{3\hbar L}x^3\right).
 $$
 
 For the physical sign $B_0/L>0$, it decays as $x\to-\infty$ but diverges as $x\to+\infty$. Consequently,
@@ -558,10 +558,10 @@ $$
 \psi_{k_y}(x)=\sum_{n=0}^{N-1}c_n\phi_n(x),
 $$
 
-using the reference frequency $\omega_c=eB_0/m^*$ and oscillator length
+using the reference frequency $\omega_c=eB_0/m^\ast$ and oscillator length
 
 $$
-\ell_0=\sqrt{\frac{\hbar}{m^*\omega_c}},
+\ell_0=\sqrt{\frac{\hbar}{m^\ast\omega_c}},
 \qquad x_0=\frac{\ell_0}{\sqrt2}.
 $$
 
@@ -575,7 +575,7 @@ Define
 
 $$
 x=x_0(a+a^\dagger),
-\qquad p_x=i\sqrt{\frac{m^*\hbar\omega_c}{2}}(a^\dagger-a),
+\qquad p_x=i\sqrt{\frac{m^\ast\hbar\omega_c}{2}}(a^\dagger-a),
 $$
 
 with $a|n\rangle=\sqrt n|n-1\rangle$. Therefore
@@ -635,7 +635,7 @@ The implementation has two paths.
 | Lowest bands of a large sweep | `spectrum.py`, `method="lanczos"` | ARPACK implicitly restarted Lanczos via `scipy.sparse.linalg.eigsh` |
 
 The Lanczos wrapper is `lanczos.py:lanczos_eigenpairs`. It returns the lowest
-`state_count` Ritz pairs, ordered by energy: $n=0,ldots,\text{state_count}-1$.
+`state_count` Ritz pairs, ordered by energy: $n=0,\ldots,\text{state\_count}-1$.
 
 ---
 
@@ -655,7 +655,7 @@ The basis truncation is variational for the lowest eigenvalue, but each reported
 `params.py` uses Hartree atomic units:
 
 $$
-\hbar=e=m_e=1,\qquad m^*=0.067.
+\hbar=e=m_e=1,\qquad m^\ast=0.067.
 $$
 
 The code sets
@@ -726,7 +726,7 @@ $$
 U_{\rm mid}=e^{-i\tau H(t+\tau/2)/\hbar}
 $$
 
-is second order. It misses higher Magnus terms containing $[H(t_1),H(t_2)]$. Here they are nonzero because the kinetic operator $p_x^2/(2m^*)$ does not commute with the time-dependent linear potential $x\cos\omega t$.
+is second order. It misses higher Magnus terms containing $[H(t_1),H(t_2)]$. Here they are nonzero because the kinetic operator $p_x^2/(2m^\ast)$ does not commute with the time-dependent linear potential $x\cos\omega t$.
 
 ---
 
@@ -739,7 +739,7 @@ H(t)=T+V(t),
 $$
 
 $$
-T=\frac{p_x^2}{2m^*},
+T=\frac{p_x^2}{2m^\ast},
 $$
 
 $$
@@ -750,9 +750,9 @@ where, for the code,
 
 $$
 \begin{aligned}
-V_c&=\frac{\hbar^2k_y^2}{2m^*}
-+\frac{\hbar k_yeB_0}{2m^*L}x^2
-+\frac{e^2B_0^2}{8m^*L^2}x^4,\\
+V_c&=\frac{\hbar^2k_y^2}{2m^\ast}
++\frac{\hbar k_yeB_0}{2m^\ast{}L}x^2
++\frac{e^2B_0^2}{8m^\ast{}L^2}x^4,\\
 f(t)&=\cos(\omega_{\rm ac}t),\qquad
 V_f=\frac{eV_{\rm ac}}Lx.
 \end{aligned}
@@ -860,7 +860,7 @@ For $H=T+V(x,t)$, the nested commutator used by the paper has the special coordi
 
 $$
 [\alpha_2,[\alpha_1,\alpha_2]]\psi
-=-\frac{5\tau^3}{3m^*}
+=-\frac{5\tau^3}{3m^\ast}
 \left[V'(x,t+c_3\tau)-V'(x,t+c_1\tau)\right]^2\psi,
 $$
 
@@ -887,7 +887,7 @@ $$
 where
 
 $$
-\widetilde V=-\frac{5}{3m^*\,43200}
+\widetilde V=-\frac{5}{3m^\ast\,43200}
 \left[V'_3-V'_1\right]^2.
 $$
 
@@ -907,7 +907,7 @@ This has no $x$ dependence. Hence
 
 $$
 \widetilde V(t,\tau)=
--\frac{[f_3-f_1]^2}{25920m^*}
+-\frac{[f_3-f_1]^2}{25920m^\ast}
 \left(\frac{eV_{\rm ac}}L\right)^2I.
 $$
 
@@ -1076,17 +1076,17 @@ The nonrelativistic matter Lagrangian density is
 
 $$
 \mathcal L=
-\frac{i\hbar}{2}\left[\Psi^*D_t\Psi-(D_t\Psi)^*\Psi\right]
--\frac{\hbar^2}{2m^*}(\mathbf D\Psi)^*\cdot(\mathbf D\Psi).
+\frac{i\hbar}{2}\left[\Psi^\ast{}D_t\Psi-(D_t\Psi)^\ast\Psi\right]
+-\frac{\hbar^2}{2m^\ast}(\mathbf D\Psi)^\ast\cdot(\mathbf D\Psi).
 $$
 
 Expanding the first term gives
 
 $$
 \mathcal L=
-\frac{i\hbar}{2}(\Psi^*\partial_t\Psi-\partial_t\Psi^*\Psi)
+\frac{i\hbar}{2}(\Psi^\ast\partial_t\Psi-\partial_t\Psi^\ast\Psi)
 -q\phi|\Psi|^2
--\frac{\hbar^2}{2m^*}|\mathbf D\Psi|^2.
+-\frac{\hbar^2}{2m^\ast}|\mathbf D\Psi|^2.
 $$
 
 It is invariant under the local gauge transformation
@@ -1101,18 +1101,18 @@ $$
 
 # Euler–Lagrange equation gives the Hamiltonian
 
-Varying $S=\int dt\,d^2r\,\mathcal L$ with respect to $\Psi^*$ yields
+Varying $S=\int dt\,d^2r\,\mathcal L$ with respect to $\Psi^\ast$ yields
 
 $$
 i\hbar\partial_t\Psi=
-\left[\frac{1}{2m^*}(-i\hbar\nabla-q\mathbf A)^2+q\phi\right]\Psi.
+\left[\frac{1}{2m^\ast}(-i\hbar\nabla-q\mathbf A)^2+q\phi\right]\Psi.
 $$
 
 For $q=-e$ and the potentials chosen above,
 
 $$
 i\hbar\partial_t\Psi=
-\left[\frac{(-i\hbar\nabla+e\mathbf A)^2}{2m^*}
+\left[\frac{(-i\hbar\nabla+e\mathbf A)^2}{2m^\ast}
 +\frac{eV_e(t)}Lx\right]\Psi,
 $$
 
@@ -1132,7 +1132,7 @@ and probability current
 
 $$
 \mathbf J_{\rm prob}=
-\frac{\hbar}{m^*}\operatorname{Im}(\Psi^*\mathbf D\Psi).
+\frac{\hbar}{m^\ast}{\rm Im}(\Psi^\ast\mathbf D\Psi).
 $$
 
 Using the Euler–Lagrange equation above and its complex conjugate gives
@@ -1141,7 +1141,7 @@ $$
 \partial_t n+\nabla\cdot\mathbf J_{\rm prob}=0.
 $$
 
-This result is gauge invariant because $\Psi^*\mathbf D\Psi$ is gauge invariant.
+This result is gauge invariant because $\Psi^\ast\mathbf D\Psi$ is gauge invariant.
 
 ---
 
@@ -1155,13 +1155,13 @@ $$
 
 $$
 \mathbf j=q\mathbf J_{\rm prob}
-=\frac{q\hbar}{m^*}\operatorname{Im}(\Psi^*\mathbf D\Psi).
+=\frac{q\hbar}{m^\ast}{\rm Im}(\Psi^\ast\mathbf D\Psi).
 $$
 
 Equivalently, with mechanical momentum $\boldsymbol\pi=-i\hbar\nabla-q\mathbf A$,
 
 $$
-\boxed{\ \mathbf j=\frac{q}{m^*}\operatorname{Re}(\Psi^*\boldsymbol\pi\Psi)\ }.
+\boxed{\ \mathbf j=\frac{q}{m^\ast}{\rm Re}(\Psi^\ast\boldsymbol\pi\Psi)\ }.
 $$
 
 Varying the Lagrangian density with respect to the external vector potential also yields this source current: $\delta\mathcal L/\delta\mathbf A=\mathbf j$. Charge conservation is
@@ -1178,8 +1178,8 @@ Expanding the charge-current expression gives
 
 $$
 \mathbf j=
-\frac{q\hbar}{m^*}\operatorname{Im}(\Psi^*\nabla\Psi)
--\frac{q^2}{m^*}\mathbf A|\Psi|^2.
+\frac{q\hbar}{m^\ast}{\rm Im}(\Psi^\ast\nabla\Psi)
+-\frac{q^2}{m^\ast}\mathbf A|\Psi|^2.
 $$
 
 The first term is usually called paramagnetic and the second diamagnetic. Neither is separately gauge invariant; their sum is.
@@ -1187,8 +1187,8 @@ The first term is usually called paramagnetic and the second diamagnetic. Neithe
 For electrons ($q=-e$),
 
 $$
-\mathbf j=-\frac{e\hbar}{m^*}\operatorname{Im}(\Psi^*\nabla\Psi)
--\frac{e^2}{m^*}\mathbf A|\Psi|^2.
+\mathbf j=-\frac{e\hbar}{m^\ast}{\rm Im}(\Psi^\ast\nabla\Psi)
+-\frac{e^2}{m^\ast}\mathbf A|\Psi|^2.
 $$
 
 Omitting the $A_y$ term would give an incorrect $y$ current and would fail the static band-slope identity (8).
@@ -1206,12 +1206,12 @@ $$
 into (28). Since $A_x=0$ and $A_y=B_0x^2/(2L)$,
 
 $$
-j_x(x,t)=-\frac{e\hbar}{m^*L_y}
-\operatorname{Im}[\psi^*\partial_x\psi],
+j_x(x,t)=-\frac{e\hbar}{m^\ast{}L_y}
+{\rm Im}[\psi^\ast\partial_x\psi],
 $$
 
 $$
-j_y(x,t)=-\frac{e}{m^*L_y}
+j_y(x,t)=-\frac{e}{m^\ast{}L_y}
 \left(\hbar k_y+\frac{eB_0x^2}{2L}\right)|\psi|^2.
 $$
 
@@ -1273,12 +1273,12 @@ For the normalized channel, define
 
 $$
 \langle v_x\rangle=
-\frac{\hbar}{m^*}\int dx\,\operatorname{Im}(\psi^*\partial_x\psi),
+\frac{\hbar}{m^\ast}\int dx\,{\rm Im}(\psi^\ast\partial_x\psi),
 $$
 
 $$
 \langle v_y\rangle=
-\frac1{m^*}\int dx\,
+\frac1{m^\ast}\int dx\,
 \left(\hbar k_y+\frac{eB_0x^2}{2L}\right)|\psi|^2.
 $$
 
