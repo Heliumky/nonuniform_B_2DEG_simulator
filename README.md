@@ -10,6 +10,31 @@ says nm, meV, or T. The model excludes spin, Zeeman coupling,
 electron--electron interaction, disorder, confinement in $y$, and a sum over
 occupied $k_y$ channels.
 
+## Repository layout
+
+- **src/** — physical-model code shared by both calculations: SHO operator
+  matrices (`basis.py`), Hamiltonian and effective-potential assembly
+  (`hamiltonian.py`), the ARPACK/`expm_multiply` eigensolver and
+  exponential-action wrappers (`lanczos.py`), the commutator-free
+  $\Upsilon^{[6]}_3$ time-stepper (`propagators.py`), and the shared
+  zero-based state-index convention (`state_index.py`).
+- **statics/** — the DC-only spectrum, wavefunction, and potential figures
+  described in Section 2. Entry points: `run_spectrum.py`,
+  `run_wave_function.py`, `run_potential.py`; parameters live in `config.py`.
+- **dynamics/** — the driven trajectory/current/density pipeline, including
+  the time-dependent effective potential, described in Sections 3, 5, and 6.
+  Entry points: `dynamics.py`, `current.py`,
+  `density.py`, `plot_current.py`, `plot_density.py`,
+  `potential_comparison.py`; parameters live in `config.py`.
+- **data/dynamics/** — saved HDF5 trajectories and derived current/density
+  files (Section 5).
+- **figures/statics/**, **figures/dynamics/** — PNGs and GIFs produced by the
+  two pipelines.
+- **non_BTD.md** — a longer derivation of the gauge choice, well structure,
+  propagator, and current formula (Marp slide source).
+- **method.pdf** and the other PDFs at the repository root — background
+  papers; see References at the end of this document.
+
 ## 1. Physical model: full Hamiltonian
 
 The electron has charge $q=-e$, where $e>0$. The code parameter
@@ -123,6 +148,21 @@ diagonalization (dense) or ARPACK's low-energy eigensolver (lanczos).
 **LANCZOS_DIMENSION** is only the ARPACK working-subspace size, ncv.
 Static wavefunction figures use dense diagonalization.
 
+### Example static figures
+
+Static spectrum: $V_{\rm DC}=0.5\hbar\omega_c$, 101 $k_y$ points, 601 SHO
+states, and the lowest 12 eigenstates:
+
+![Static energy spectrum](figures/statics/spectrum_kyminus0p5to0p5_Nky101_Vdc0p5_Nbasis601_states_n0to11_lanczos_M30.png)
+
+Static effective potentials at zero DC bias:
+
+![Static effective potentials](figures/statics/potential_Vdc0_ky0p15_minus0p05_minus0p15_Nx500.png)
+
+Static ground-state density, $k_y=-0.15\ {\rm nm}^{-1}$ and $n=0$:
+
+![Static ground-state probability density](figures/statics/probability_n0_kyminus0p15_Ve0_Nbasis201_Nx501.png)
+
 ## 3. Driven calculation and initial state
 
 The propagation Hamiltonian is
@@ -207,6 +247,23 @@ affects neither the zero-bias dense solve nor SciPy **expm_multiply**.
 |---|---|---|
 | **INITIAL_EIGSH_NCV** | ARPACK convergence of $\phi_n$ when $V_{\rm DC}\ne0$ | Zero-bias dense solve; dynamic exponential actions |
 | **NUMBER_OF_STEPS** | $\Delta t$ and sixth-order time error | Static initial eigenpair accuracy |
+
+### Static vs. driven effective potential
+
+This GIF (produced by `dynamics/potential_comparison.py`) compares
+**Hamiltonians only**, not propagated wavefunctions. Left/red is cosine and
+right/teal is sine, both evaluated at the same time:
+
+$$
+V_e^{\cos}(t)=V_{\rm DC}+V_{\rm AC}\cos(\omega_{\rm ac}t),\qquad
+V_e^{\sin}(t)=V_{\rm DC}+V_{\rm AC}\sin(\omega_{\rm ac}t).
+$$
+
+At $t=0$, cosine has $f(0)=1$ and sine has $f(0)=0$: cosine's frame starts
+already at the quenched double well described above, while sine's frame
+starts at the plain $H_{\rm static}$.
+
+![Cosine (left) and sine (right) effective potentials](figures/dynamics/potential_sin_cos_kym0p15nm1_Vdc0hwc_Vac0p5hwc_w1wc_Nx401_T1periods.gif)
 
 ## 4. Configuration parameters
 
@@ -555,39 +612,7 @@ $2.1642\times10^{-6}$ for $J_y$.  Together with norm conservation, these
 are consistent with a bounded, unitary driven response.  They establish
 internal numerical consistency, not a full basis/time-step convergence study.
 
-## 8. Example static results and drive potential
-
-Static spectrum: $V_{\rm DC}=0.5\hbar\omega_c$, 101 $k_y$ points, 601 SHO
-states, and the lowest 12 eigenstates:
-
-![Static energy spectrum](figures/statics/spectrum_kyminus0p5to0p5_Nky101_Vdc0p5_Nbasis601_states_n0to11_lanczos_M30.png)
-
-Static effective potentials at zero DC bias:
-
-![Static effective potentials](figures/statics/potential_Vdc0_ky0p15_minus0p05_minus0p15_Nx500.png)
-
-Static ground-state density, $k_y=-0.15\ {\rm nm}^{-1}$ and $n=0$:
-
-![Static ground-state probability density](figures/statics/probability_n0_kyminus0p15_Ve0_Nbasis201_Nx501.png)
-
-This GIF compares **Hamiltonians only**, not propagated wavefunctions.
-Left/red is cosine and right/teal is sine, both evaluated at the same time:
-
-$$
-V_e^{\cos}(t)=V_{\rm DC}+V_{\rm AC}\cos(\omega_{\rm ac}t),\qquad
-V_e^{\sin}(t)=V_{\rm DC}+V_{\rm AC}\sin(\omega_{\rm ac}t).
-$$
-
-At $t=0$, cosine has $f(0)=1$ and sine has $f(0)=0$.
-
-![Cosine (left) and sine (right) effective potentials](figures/dynamics/potential_sin_cos_kym0p15nm1_Vdc0hwc_Vac0p5hwc_w1wc_Nx401_T1periods.gif)
-
-Current animations are generated per waveform. Set **AC_WAVEFORM** to sin or
-cos in **dynamics/config.py**, then run **dynamics.current** followed by
-**dynamics.plot_current**. Both use the state selected by
-**INITIAL_STATE_INDEX**; only the AC waveform and hence $H(t)$ differ.
-
-## 9. Convergence checks
+## 8. Convergence checks
 
 No automated test suite is currently included. Before interpreting a new run:
 
@@ -611,3 +636,26 @@ sufficient in the spot check.
 
 For a longer derivation of the gauge, well structure, propagator, and current
 formula, see **non_BTD.md**.
+
+## References
+
+Background papers kept alongside the code, at the repository root:
+
+- P. Bader, S. Blanes, N. Kopylov, *"Exponential propagators for the
+  Schrödinger equation with a time-dependent potential"* (`method.pdf`) —
+  source of the five-exponential, commutator-free $\Upsilon^{[6]}_3$
+  propagator implemented in `src/propagators.py` (Section 3).
+- Y.-T. Huang, C.-C. Kaun, C.-H. Chang, *"Electrically Controllable Flat
+  Band in Two-Dimensional Electron Gases under Nonuniform Magnetic Fields"*
+  (`2601.05064v3.pdf`) — the 2DEG-in-a-linearly-varying-field system this
+  repository models (Section 1).
+- A. Eckardt, *"High-frequency approximation for periodically driven quantum
+  systems from a Floquet-space perspective"* (`1502.06477v4.pdf`) — Floquet
+  background for the AC-driven calculation in Section 3.
+- T. Oka, S. Kitamura, *"Floquet Engineering of Quantum Materials"*, Annu.
+  Rev. Condens. Matter Phys. 10 (2019)
+  (`annurev-conmatphys-031218-013423 (1).pdf`) — broader review context for
+  periodically driven condensed-matter systems.
+- D. S. Ageev, V. A. Bykov, *"The Schrödinger Equation as a Gauge Theory"*
+  (`2604.26016v1.pdf`) — gauge-theoretic background reading, not required to
+  reproduce the results in this repository.
